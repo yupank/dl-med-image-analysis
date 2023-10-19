@@ -1,7 +1,7 @@
 # CNN for analysis and classification of tumor images 
 ## Overview
 PyTorch-based project to deploy several convolutional neural networks predict a tumour’s mutational status. 
-Models have been trained on publicly available dataset and showed final accuracy > 99% with <1% of false negatives.
+Models have been trained on publicly available dataset and showed final accuracy > 97 % with < 2% of false negatives.
 
 ## Description:
 1. cnn-models.py - PyTorch script with scalable 2D and 3D CNNs for binary classification;

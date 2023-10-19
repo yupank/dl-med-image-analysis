@@ -11,6 +11,7 @@ from matplotlib import pyplot as plt
 import pandas as pd
 
 from time import time
+from random import random
 
 
 if torch.cuda.is_available():
@@ -52,13 +53,14 @@ tr.Compose([
     )
 
 
-def image_loader(img_dir ='./data/STAN_patches_lbls/', train_bs = 16, data_3D = False):
+def image_loader(img_dir ='./data/STAN_patches_lbls/', train_bs = 16, split_p =0.8, data_3D = False):
 
     """ utility function for data curation,
     reads the images and labels from folders and creates test and train datasets and data loaders
     train data are augmented because of small size of current dataset
     Args:   img_dir | String - the relative path to main folder with data library
             train_bs  - train batch size; for the test dataset, all data will be loaded at once
+            split | float - probability of inclusion of image in the training dataset
             data_3D | bool- if False, the data will be converted to the 2D 96x96 images of 5 channels(for loading into 2D CNNs),
                             if True,  the data will be converted to the 3D 5x96x96 images of 1 channel (for 3D CNN)
 
@@ -101,17 +103,20 @@ def image_loader(img_dir ='./data/STAN_patches_lbls/', train_bs = 16, data_3D = 
         # corresponding labels
         test_labels.append(y_label)
 
-        # for training data augmentation, each loaded 5-stack image is cloned and transformed into 4 different tensors
-        for aug_tr in augm_transform:
-            train_img = aug_tr(load_img).unsqueeze_(0)
-            # concatenating the features into a single training data tensor
-            # 3D / 2D
-            if data_3D:
-                train_img_tensor = torch.cat((train_img_tensor, torch.unsqueeze(train_img,0)), dim=0)
-            else:
-                train_img_tensor = torch.cat((train_img_tensor, train_img), dim=0)
-            # corresponding labels
-            train_labels.append(y_label)
+        # splitting 
+        if random() <= split_p :
+            #image included in the training set
+            # for training data augmentation, each loaded 5-stack image is cloned and transformed into 4 different tensors
+            for aug_tr in augm_transform:
+                train_img = aug_tr(load_img).unsqueeze_(0)
+                # concatenating the features into a single training data tensor
+                # 3D / 2D
+                if data_3D:
+                    train_img_tensor = torch.cat((train_img_tensor, torch.unsqueeze(train_img,0)), dim=0)
+                else:
+                    train_img_tensor = torch.cat((train_img_tensor, train_img), dim=0)
+                # corresponding labels
+                train_labels.append(y_label)
     test_label_tensor = torch.Tensor(test_labels, device=device)
     train_label_tensor = torch.Tensor(train_labels, device=device)
 

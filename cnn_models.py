@@ -5,7 +5,7 @@ import torch.nn as nn
 class Cnn3Layer(nn.Module):
     """ The scalable CNN of 3 convolutional 2D units followed by a single linear layer with sigmoid output function.
         Model takes the data as stacks of 2D-images with n channels  (5 for the current dataset), i.e. as 3D tensors.
-        As activation functions, both ReLU and LeakyReLU work fine, with sligtly smoother conversion with the LeakyReLU
+        As activation functions, both ReLU and LeakyReLU work fine, without notable difference in the perforance
         Parameters:
             init_nodes |int - number of nodes in the 1st convolutional layer;  the number of nodes 
                 in next conv units expands two-fold and in the unit 3 can be increased or decreased;
@@ -24,14 +24,14 @@ class Cnn3Layer(nn.Module):
         self.conv_1 = nn.Sequential(
             nn.Conv2d(n_channel, init_nodes, kernel_size= conv_kernel, stride=1, padding=pad),
             nn.BatchNorm2d(init_nodes),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2),
             nn.Dropout(drop)
         )
         self.conv_2 = nn.Sequential(
             nn.Conv2d(init_nodes, init_nodes*2, kernel_size= conv_kernel, stride=1, padding=pad),
             nn.BatchNorm2d(init_nodes*2),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2),
             nn.Dropout(drop)
         )
@@ -39,7 +39,7 @@ class Cnn3Layer(nn.Module):
         self.conv_3 = nn.Sequential(
             nn.Conv2d(init_nodes*2, init_nodes*conv_3_scale, kernel_size= conv_kernel, stride=1, padding=pad),
             nn.BatchNorm2d(init_nodes*conv_3_scale),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2),
             nn.Dropout(drop)
 
@@ -128,14 +128,14 @@ class Cnn3Layer3d(nn.Module):
         self.conv_unit_1 = nn.Sequential(
             nn.Conv3d(n_channel, init_nodes, kernel_size= conv_kernel, stride=1, padding=pad),
             nn.BatchNorm3d(init_nodes),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.MaxPool3d(kernel_size=2, stride=2),
             nn.Dropout(drop)
         )
         self.conv_unit_2 = nn.Sequential(
             nn.Conv3d(init_nodes, init_nodes*2, kernel_size= conv_kernel, stride=1, padding=pad),
             nn.BatchNorm3d(init_nodes*2),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.MaxPool3d(kernel_size=2, stride=2),
             nn.Dropout(drop)
         )
@@ -144,7 +144,7 @@ class Cnn3Layer3d(nn.Module):
         self.lin_unit_1 = nn.Sequential(
             nn.Flatten(),
             nn.Linear(int(init_nodes*2*out_dim), init_nodes*4),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.BatchNorm1d(init_nodes*4),
             nn.Dropout(drop)
         )

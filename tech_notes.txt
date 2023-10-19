@@ -23,7 +23,7 @@ but improved accuracy and convergance.
 6) 3 Layer vs 4 Layer - increase of number of layers (with the same initial nodes) 
 does not give a notable benefit in convergance and final accuracy but requiered longer computation;
 when number of nodes in the 4L model is decreased to provide similar execution time as 3L model, 
-the final accuracy was similar. 
+the final accuracy was not better than with 3 layers 
 So, increase in the number of convolutional layers does not seem sensible.
 
 3D model:

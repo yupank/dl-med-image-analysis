@@ -1,0 +1,196 @@
+2D CNN_models:
+
+1) 3 Layer CNN shows rather good convergence with wide range of hyper-paramaters, 
+reaching the final accuracy about 87-95% within 20 epochs;
+with learning rate > 0.003 and small dropout rates model shows signs of over-fitting like
+ test accuracy < training accuracy, uneven convergance;
+
+2) to reach final accuracy > 98% with smoother convergance, learning rate should be lowered < 0.002 and
+ dropout rate should be between 0.15 - 0.2; further increase in droput rate does not improve convergance 
+ and slightly decreases the test accuracy.
+
+3) increasing of convolution kernel size from 3 to 5 increased number of model parameters and computation time
+but improved accuracy and convergance.
+
+4) With OPTIMAL set of parameters:
+ initial nodes = 32, kernel size = 5, lr=0.002, dropout rate = 0.2, batch_size of 16
+ 3 layer-CNN converges within 40-45 training epochs with test accuracy > 99% and false negative < 1%.
+
+5) On average-performance CPU (MacBookPro), training of 3L 2D CNN model usually took 8 - 12 min.
+   The GPU was not available; Potentially,  the  code enables CUDA and GPU could be used.
+
+
+6) 3 Layer vs 4 Layer - increase of number of layers (with the same initial nodes) 
+does not give a notable benefit in convergance and final accuracy but requiered longer computation;
+when number of nodes in the 4L model is decreased to provide similar execution time as 3L model, 
+the final accuracy was similar. 
+So, increase in the number of convolutional layers does not seem sensible.
+
+3D model:
+
+tuning the 3D CNN turned out to be tricky, 
+the model showed signs of overfitting in the wide range of parameters with best final accuracy lower than for 2D model.
+increase in the dropout rate above 0.15 did not improve convergance but decreased the final accuracy.
+
+Overfitting could be overcomed for 16-node 3D model with lowering learning rate to <= 0.001 and training for > 80 epochs,
+usage of 32 initial nodes did not give any signifcant benefits but increased the computation time.
+The best accuracy for 3D model (reached in the same time range as for 2D case), was about 98%. 
+However, the false negatives rate was very low for 3D model.
+Most likely, the problems with 3D model are caused by low depth of 3D images (just 5 stacks) and low sample size, 
+with more complex data, this model might show over-perform the 2D models.
+
+
+Examples from training log:
+1)
+model = Cnn3Layer(init_nodes=16, n_channel=5, conv_kernel=3, inp_dim=in_dim, drop = 0.05).to(device)
+lr = 0.002, ep = 16
+final test accuracy: 0.9655172413793104 false negatives: 0.034482758620689655
+execution time: 72.0419750213623
+2) same as model 1), lr = 0.005 ep = 16
+final test accuracy: 0.8706896551724138 false negatives: 0.12931034482758622
+execution time: 63.54349112510681
+
+3) same as model 1), lr = 0.001 ep = 16
+final test accuracy: 0.9482758620689655 false negatives: 0.04310344827586207
+execution time: 60.036763191223145, convergence unevena
+
+4)
+model = Cnn3Layer(init_nodes=16, n_channel=5, conv_kernel=3, inp_dim=in_dim, drop = 0.1).to(device)
+lr = 0.003
+final test accuracy: 0.9482758620689655 false negatives: 0.05172413793103448
+execution time: 61.533303022384644
+
+5) all params as in 4), but 20 epochs
+final test accuracy: 0.9568965517241379 false negatives: 0.02586206896551724
+execution time: 76.26058292388916
+
+6) all params as in 5), but conv_kernel = 5
+final test accuracy: 0.9482758620689655 false negatives: 0.034482758620689655
+execution time: 117.06499791145325
+
+7) all params as in 6), init_nodes = 20
+final test accuracy: 0.9655172413793104 false negatives: 0.02586206896551724
+execution time: 257.8456518650055
+
+8) all params as in 6), init_nodes = 32
+final test accuracy: 0.9655172413793104 false negatives: 0.008620689655172414
+execution time: 329.95241808891296
+
+9) same as 8) but ut conv_kernel = 3
+final test accuracy: 0.9568965517241379 false negatives: 0.034482758620689655
+execution time: 166.49790215492249
+
+10) model = Cnn3Layer(init_nodes=32, n_channel=5, conv_kernel=5, inp_dim=in_dim, drop = 0.1)
+
+lr = 0.003, epochs = 25
+final test accuracy: 0.9913793103448276 false negatives: 0.0
+execution time: 353.86406087875366
+2nd run:
+final test accuracy: 0.9224137931034483 false negatives: 0.07758620689655173
+execution time: 393.7363250255585
+
+11) model = Cnn3Layer(init_nodes=32, n_channel=5, conv_kernel=5, inp_dim=in_dim, drop = 0.15)
+    lr = 0.0025, epochs = 32
+    final test accuracy: 0.9741379310344828 false negatives: 0.017241379310344827
+    execution time: 494.43624806404114
+2nd run
+    final test accuracy: 0.9655172413793104 false negatives: 0.017241379310344827
+execution time: 484.02029514312744
+
+12) same model, batch_size=10 , lr = 0.003, 40 epochs
+final test accuracy: 0.9913793103448276 false negatives: 0.0
+execution time: 572.2919852733612
+convergence is uneven
+
+13) model = Cnn3Layer(init_nodes=32, n_channel=5, conv_kernel=5, inp_dim=in_dim, drop = 0.2)
+    lr = 0.002, epochs = 50
+    final test accuracy: 0.9913793103448276 false negatives: 0.008620689655172414
+    execution time: 700.3624629974365
+    
+    2nd run epochs = 45, data normalized
+    final test accuracy: 0.9913793103448276 false negatives: 0.008620689655172414
+    execution time: 629.8679060935974
+
+    3rd run , data normalized
+    no BatchNorm2d in conv_1, conv_2, model tag ='1d'
+    final test accuracy: 1.0 false negatives: 0.0
+    execution time: 729.2439408302307
+
+    4th run, data normalized
+    with BatchNorm2d again, model tag ='1d'
+    final test accuracy: 0.9741379310344828 false negatives: 0.008620689655172414
+    execution time: 747.2355151176453
+
+    5th run, same params as 2nd and 4th 
+    final test accuracy: 1.0 false negatives: 0.0
+    execution time: 661.5478949546814
+14) model as in 13), but with LeakyReLU as activation
+    lr = 0.002, epochs = 32, model tag = '5a1'
+    final test accuracy: 0.9741379310344828 false negatives: 0.008620689655172414
+    execution time: 470.38401079177856
+15) same as 14), epochs = 40, model tag = '5b1'
+    final test accuracy: 0.9827586206896551 false negatives: 0.017241379310344827
+    execution time: 554.2714188098907
+
+3D 3-layer Model
+
+1) model = Cnn3Layer3d(init_nodes=16, n_channel=1, conv_kernel=3, inp_dim=in_dim, drop = 0.1).to(device)
+    lr = 0.002, epochs = 32
+    final test accuracy: 0.9396551724137931 false negatives: 0.0
+    execution time: 334.69898796081543
+2) model = Cnn3Layer3d(init_nodes=32, n_channel=1, conv_kernel=3, inp_dim=in_dim, drop = 0.25)
+    lr = 0.002, epochs = 32
+    final test accuracy: 0.9224137931034483 false negatives: 0.008620689655172414
+    execution time: 780.3277261257172
+3) same as 2), lr = 0.003, epochs = 32
+    final test accuracy: 0.9224137931034483 false negatives: 0.008620689655172414
+    execution time: 746.2212870121002
+
+    convergance is rather un-even in all 3 cifar_test_set
+4) model = Cnn3Layer3d(init_nodes=32, n_channel=1, conv_kernel=5, inp_dim=in_dim, drop = 0.2)
+lr = 0.0025, 45 epochs
+final test accuracy: 0.896551724137931 false negatives: 0.008620689655172414
+execution time: 2383.7031338214874
+uneven convergence, lower test accuracy, probably over-fitting
+
+5) 
+model = Cnn3Layer3d(init_nodes=32, n_channel=1, conv_kernel=3, inp_dim=in_dim, drop = 0.3)
+optimizer - Adam
+final test accuracy: 0.9396551724137931 false negatives: 0.05172413793103448
+execution time: 1048.6493601799011
+6) same as 5) but optimizer Adagrad
+final test accuracy: 0.9051724137931034 false negatives: 0.008620689655172414
+execution time: 1082.0270690917969
+
+7)
+going back to 16 nodes
+model = Cnn3Layer3d(init_nodes=16, n_channel=1, conv_kernel=3, inp_dim=in_dim, drop = 0.2)
+lr = 0.002, epochs = 45
+final test accuracy: 0.9051724137931034 false negatives: 0.008620689655172414
+execution time: 446.0634868144989
+2nd run
+final test accuracy: 0.9310344827586207 false negatives: 0.008620689655172414
+execution time: 509.59959411621094
+
+8) same as 7), epochs = 80, model tag = '1b3'
+final test accuracy: 0.896551724137931 false negatives: 0.02586206896551724
+execution time: 797.0806751251221
+
+9)
+model = Cnn3Layer3d(init_nodes=16, n_channel=1, conv_kernel=3, inp_dim=in_dim, drop = 0.25)
+data normalized, model_tag='1b3'
+lr = 0.0015, epochs = 90
+
+final test accuracy: 0.9137931034482759 false negatives: 0.0
+execution time: 907.8487598896027
+10) same as 9) but with drop  = 0.2
+lr = 0.001, epochs = 100
+final test accuracy: 0.9224137931034483 false negatives: 0.0
+execution time: 1025.8652982711792
+11) same as 9) but with drop = 0.1
+lr = 0.001, epochs = 100
+model_tag='1b4'
+final test accuracy: 0.9224137931034483 false negatives: 0.0
+execution time: 992.7791838645935
+12) model = Cnn3Layer3d(init_nodes=24, n_channel=1, conv_kernel=3, inp_dim=in_dim, drop = 0.1).to(device)
+lr = 0.001 epochs = 80

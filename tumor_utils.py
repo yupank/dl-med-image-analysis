@@ -139,10 +139,9 @@ def kagg_brain_image_loader(img_dir = './data/brain_tumors/', train_bs = 64, spl
             split | float (0:1) - split factor
     Out: test_data_loader, train_data_loader (as Torch DataLoaders)
     """
-    read_transform = tr.Compose([tr.ToTensor()])
+    read_transform = tr.Compose([tr.Grayscale(),tr.ToTensor()])
     read_dataset = ImageFolder(img_dir, transform=read_transform)
     train_dataset, test_dataset = random_split(read_dataset, (split, 1-split))
-    print(len(train_dataset), len(test_dataset))
     train_data_loader = torch.utils.data.DataLoader(dataset= train_dataset, batch_size=train_bs, shuffle=False)
     test_data_loader = torch.utils.data.DataLoader(dataset= test_dataset, batch_size=len(test_dataset), shuffle=True)
     return train_data_loader, test_data_loader
@@ -205,7 +204,7 @@ def show_examples(pred_labels, true_labels, test_images, show_cols=8, fig_prefix
 
 
 def cnn_image_classifier(model, train_loader, test_loader, model_run_tag = '',
-                     epochs=10, learn_rate= 0.01, criterion = nn.BCELoss()):
+                     epochs=10, learn_rate= 0.01, criterion = nn.BCELoss(), rep_folder='reports'):
     
     """ The 'wrapper' function which performs model training and evaluation, 
             reports performance metrics, plots the learning curves and saves the model state
@@ -220,8 +219,8 @@ def cnn_image_classifier(model, train_loader, test_loader, model_run_tag = '',
 
     test_data = iter(test_loader)
     test_images, test_labels = next(test_data)
-    # optimizer  = torch.optim.Adam(model.parameters(), lr=learn_rate)
-    optimizer = torch.optim.Adagrad(model.parameters(), lr=learn_rate)
+    optimizer  = torch.optim.Adam(model.parameters(), lr=learn_rate)
+    # optimizer = torch.optim.Adagrad(model.parameters(), lr=learn_rate)
     start_tm = time()
     train_loss = []
     train_accuracy = []
@@ -231,7 +230,8 @@ def cnn_image_classifier(model, train_loader, test_loader, model_run_tag = '',
         ave_accuracy = 0  #epoch accuracy, averaged over batches
         with torch.no_grad():
             test_output = model(test_images.to(device))
-        validation_accuracy.append(accuracy_rate(test_output, test_labels))
+        acc_r, _ = accuracy_rate(test_output, test_labels)
+        validation_accuracy.append(acc_r)
         for count, (images, labels) in enumerate(train_loader):
             images = images.to(device)
             labels = labels.to(device)
@@ -258,7 +258,7 @@ def cnn_image_classifier(model, train_loader, test_loader, model_run_tag = '',
     axs[1].set_title('accuracy tracking')
     axs[1].legend()
     fig.suptitle(f'training of {model.name} model {model_run_tag}')
-    plt.savefig(f'./reports/{model.name}_{model_run_tag}_ep{epochs}_lr_{int(1000*learn_rate)}.svg', format='svg')
+    plt.savefig(f'./{rep_folder}/{model.name}_{model_run_tag}_ep{epochs}_lr_{int(1000*learn_rate)}.svg', format='svg')
     plt.show()
     torch.save(model.state_dict(), f'./models/{model.name}_{model_run_tag}.pkl')
     # evaluating model accuracy

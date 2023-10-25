@@ -1,14 +1,16 @@
 import torch
 import torch.nn as nn
-from torch.utils.data import TensorDataset
+from torch.utils.data import TensorDataset, random_split
 import torchvision.transforms as tr
 import torchvision.transforms.functional as fc
 from torchvision.io import read_image
+from torchvision.datasets import ImageFolder
 
 from sklearn.metrics import accuracy_score
 from matplotlib import pyplot as plt
 
 import pandas as pd
+import numpy as np
 
 from time import time
 from random import random
@@ -53,7 +55,7 @@ tr.Compose([
     )
 
 
-def image_loader(img_dir ='./data/STAN_patches_lbls/', train_bs = 16, split_p =0.8, data_3D = False):
+def stan_image_loader(img_dir ='./data/STAN_patches_lbls/', train_bs = 16, split_p =0.8, data_3D = False):
 
     """ utility function for data curation,
     reads the images and labels from folders and creates test and train datasets and data loaders
@@ -120,7 +122,7 @@ def image_loader(img_dir ='./data/STAN_patches_lbls/', train_bs = 16, split_p =0
     test_label_tensor = torch.Tensor(test_labels, device=device)
     train_label_tensor = torch.Tensor(train_labels, device=device)
 
-    # data loaders to be used in the CNNS
+    # data loaders to be used in the CNNs
     test_dataset = TensorDataset(test_img_tensor, test_label_tensor)
     train_dataset = TensorDataset(train_img_tensor, train_label_tensor)
     train_data_loader = torch.utils.data.DataLoader(dataset= train_dataset, batch_size=train_bs, shuffle=True)
@@ -128,19 +130,78 @@ def image_loader(img_dir ='./data/STAN_patches_lbls/', train_bs = 16, split_p =0
     
     return train_data_loader, test_data_loader
 
+
+def kagg_brain_image_loader(img_dir = './data/brain_tumors/', train_bs = 64, split = 0.8):
+    """ utility function for data curation,
+    reads the images from Kaggle brain tumors data set and creates labels (0 - normal images)
+    Args:   img_dir | String - the relative path to main folder with data library
+            train_bs | int  - train batch size; for the test dataset, all data will be loaded at once
+            split | float (0:1) - split factor
+    Out: test_data_loader, train_data_loader (as Torch DataLoaders)
+    """
+    read_transform = tr.Compose([tr.ToTensor()])
+    read_dataset = ImageFolder(img_dir, transform=read_transform)
+    train_dataset, test_dataset = random_split(read_dataset, (split, 1-split))
+    print(len(train_dataset), len(test_dataset))
+    train_data_loader = torch.utils.data.DataLoader(dataset= train_dataset, batch_size=train_bs, shuffle=False)
+    test_data_loader = torch.utils.data.DataLoader(dataset= test_dataset, batch_size=len(test_dataset), shuffle=True)
+    return train_data_loader, test_data_loader
+
 """ model evaluation utilities """
+
 
 # accuracy evaluation
 def accuracy_rate(predicted, true_y):
-    pred_y = [1 if pred > 0.5 else 0 for pred in predicted]
+    """ takes predicted labels as torch model output (float) and
+        converts them into integer category labels (typical for most of datasets) of shape [n_true_lables] 
+        to conform the true lables
+        Returns: accuracy score according to sklearn.metrics and converted predicted labels
+    """
+    if len(predicted.shape) > 1:
+        pred_y = [np.argmax(p.detach().numpy()) for p in predicted]
+    else:
+        pred_y = [1 if pred > 0.5 else 0 for pred in predicted]
     acc_score = accuracy_score(true_y, pred_y)
-    return acc_score
+    return acc_score, pred_y
 
 # false negatives evaluation - important for the specific task (tumor classification)
 def false_neg_rate(predicted, true_y):
-    pred_y = [1 if pred > 0.5 else 0 for pred in predicted]
-    false_neg = [pr for pr, tr in zip(pred_y, true_y) if int(tr)==1 and pr==0 ]
+    """ calculates the fraction of false negative labels on presumption that 
+        label for normal images is 0
+    """
+    if len(predicted.shape) > 1:
+        pred_y = [np.argmax(p.detach().numpy()) for p in predicted]
+    else:
+        pred_y = [1 if pred > 0.5 else 0 for pred in predicted]
+    false_neg = [pr for pr, tr in zip(pred_y, true_y) if int(tr)>=1 and pr==0 ]
     return len(false_neg)/len(pred_y)
+
+# showing some examples of classifications: first row - accurate, second - errorneous 
+def show_examples(pred_labels, true_labels, test_images, show_cols=8, fig_prefix = 'brain_tumors', fig_idx=1 ):
+    fig, axs = plt.subplots(2, show_cols, squeeze=False, figsize=(show_cols*2, 5) )
+    true_count = 0
+    err_count = 0
+    idx = 0
+    while true_count < show_cols or err_count < show_cols and idx < len(true_labels):
+        tr_image = test_images[idx, :]
+        # np_image = tr_image.permute(1,2,0)
+        np_image = fc.to_pil_image(tr_image)
+        # label =np.argmax(test_output[idx].detach().numpy())
+
+        if pred_labels[idx] == true_labels[idx] and true_count < show_cols:
+            axs[0,true_count].imshow(np_image)
+            axs[0,true_count].set_title(f'label: {true_labels[idx]}')
+            axs[0,true_count].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
+            true_count += 1
+        if pred_labels[idx] != true_labels[idx] and err_count < show_cols:
+            axs[1,err_count].imshow(np_image)
+            axs[1,err_count].set_title(f'label: {true_labels[idx]}')
+            axs[1,err_count].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
+            err_count += 1
+        idx += 1
+    plt.savefig(f'./reports/{fig_prefix}_examples_{fig_idx}.png', format='png')
+    plt.savefig(f'./reports/{fig_prefix}_examples_{fig_idx}.svg', format='svg')
+    plt.show()
 
 
 def cnn_image_classifier(model, train_loader, test_loader, model_run_tag = '',
@@ -176,7 +237,8 @@ def cnn_image_classifier(model, train_loader, test_loader, model_run_tag = '',
             labels = labels.to(device)
             optimizer.zero_grad()
             tr_outputs = model(images)
-            ave_accuracy += accuracy_rate(tr_outputs, labels)
+            acc_r, _ = accuracy_rate(tr_outputs, labels)
+            ave_accuracy += acc_r
             loss = criterion(tr_outputs, labels)
             loss.backward()
             optimizer.step()
@@ -204,7 +266,8 @@ def cnn_image_classifier(model, train_loader, test_loader, model_run_tag = '',
         test_output = model(test_images)
     
     exec_time = end_tm - start_tm
-    final_accur = accuracy_rate(test_output, test_labels)
+    final_accur, _ = accuracy_rate(test_output, test_labels)
     false_negs = false_neg_rate(test_output, test_labels)
 
     return final_accur, false_negs, exec_time
+

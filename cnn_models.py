@@ -16,10 +16,12 @@ class Cnn3Layer(nn.Module):
             drop | float - the probablity for all Dropout layer
 
     """
-    def __init__(self, init_nodes=16, conv_3_scale = 4, n_channel=5, conv_kernel= 5, inp_dim=28*28, drop=0.1):
+    def __init__(self, init_nodes=16, out_class=1, conv_3_scale = 4, n_channel=5, conv_kernel= 5, inp_dim=28*28, drop=0.1):
         super(Cnn3Layer, self).__init__()
 
         self.name = f'2D_CNN_3L_{init_nodes}_nodes'
+        # to allow expansion to multi-class classifier
+        self.out_class = out_class
         pad = int((conv_kernel-1)/2)
         self.conv_1 = nn.Sequential(
             nn.Conv2d(n_channel, init_nodes, kernel_size= conv_kernel, stride=1, padding=pad),
@@ -45,7 +47,7 @@ class Cnn3Layer(nn.Module):
 
         )
         out_dim = int(inp_dim/64)
-        self.lin_1 = nn.Linear(init_nodes*conv_3_scale*out_dim,1)
+        self.lin_1 = nn.Linear(init_nodes*conv_3_scale*out_dim,self.out_class)
         self.final = nn.Sigmoid()
 
     def forward(self,x):
@@ -65,6 +67,8 @@ class Cnn4LayerSiam(nn.Module):
     def __init__(self, init_nodes=8, n_channel=3, conv_kernel= 5, inp_dim=28*28, drop= 0.1):
         super(Cnn4LayerSiam, self).__init__()
         self.name = f'2D_CNN_4L{init_nodes}_nodes'
+        # to allow expansion to multi-class classifier
+        self.out_class = 1
         pad = int((conv_kernel-1)/2)
         self.conv_1 = nn.Sequential(
             nn.Conv2d(n_channel, init_nodes, kernel_size= conv_kernel, stride=1, padding=pad),
@@ -95,7 +99,7 @@ class Cnn4LayerSiam(nn.Module):
             nn.Flatten()
         )
         out_dim = int(inp_dim/256)
-        self.lin_1 = nn.Linear(init_nodes*out_dim,1)
+        self.lin_1 = nn.Linear(init_nodes*out_dim,self.out_class)
         self.final = nn.Sigmoid()
 
     def forward(self,x):

@@ -53,7 +53,20 @@ tr.Compose([
     tr.Normalize(mean=[0.299], std=[0.137]),
     ])
     )
-
+""" utility class to apply different transfomations for train and test datasets """
+class TransformDataset(torch.utils.data.Dataset):
+    def __init__(self, subset, transform=None):
+        self.subset = subset
+        self.transform = transform
+        
+    def __getitem__(self, index):
+        x, y = self.subset[index]
+        if self.transform:
+            x = self.transform(x)
+        return x, y
+        
+    def __len__(self):
+        return len(self.subset)
 
 def stan_image_loader(img_dir ='./data/STAN_patches_lbls/', train_bs = 16, split_p =0.8, data_3D = False):
 
@@ -139,11 +152,21 @@ def kagg_brain_image_loader(img_dir = './data/brain_tumors/', train_bs = 64, spl
             split | float (0:1) - split factor
     Out: test_data_loader, train_data_loader (as Torch DataLoaders)
     """
-    read_transform = tr.Compose([tr.Grayscale(),tr.ToTensor()])
+    # read_transform = tr.Compose([tr.Grayscale(), tr.CenterCrop(size=(240,240)), tr.Resize(size=(144,144), antialias=True) ,tr.ToTensor()])
+    read_transform = tr.Compose([tr.Grayscale(), tr.ToTensor()])
+    test_transform = tr.Compose([tr.CenterCrop(size=(240,240)), tr.Resize(size=(144,144), antialias=True)])
+    augm_transform = tr.Compose([
+                tr.RandomVerticalFlip(p=0.4),  tr.RandomRotation(degrees=(0,5),expand=True),
+                tr.RandomHorizontalFlip(p=0.4), tr.RandomPerspective(distortion_scale=0.1, p=0.4),
+                tr.CenterCrop(size=(236,236)), tr.Resize(size=(144,144), antialias=True)
+         ])
     read_dataset = ImageFolder(img_dir, transform=read_transform)
     train_dataset, test_dataset = random_split(read_dataset, (split, 1-split))
+    train_dataset = TransformDataset(train_dataset, transform= augm_transform)
+    test_dataset = TransformDataset(test_dataset, transform= test_transform)
     train_data_loader = torch.utils.data.DataLoader(dataset= train_dataset, batch_size=train_bs, shuffle=False)
     test_data_loader = torch.utils.data.DataLoader(dataset= test_dataset, batch_size=len(test_dataset), shuffle=True)
+    
     return train_data_loader, test_data_loader
 
 """ model evaluation utilities """
@@ -245,7 +268,7 @@ def cnn_image_classifier(model, train_loader, test_loader, model_run_tag = '',
             running_loss +=  loss.item()
         train_loss.append(running_loss/(count+1))
         train_accuracy.append(ave_accuracy/(count+1))
-        print(f'loss: {running_loss} accuracy: {validation_accuracy[-1]}')
+        print(f'ep:{ep} loss: {running_loss} accuracy: {validation_accuracy[-1]}')
     end_tm = time()
 
     # reporting results
@@ -259,6 +282,7 @@ def cnn_image_classifier(model, train_loader, test_loader, model_run_tag = '',
     axs[1].legend()
     fig.suptitle(f'training of {model.name} model {model_run_tag}')
     plt.savefig(f'./{rep_folder}/{model.name}_{model_run_tag}_ep{epochs}_lr_{int(1000*learn_rate)}.svg', format='svg')
+    plt.savefig(f'./{rep_folder}/{model.name}_{model_run_tag}_ep{epochs}_lr_{int(1000*learn_rate)}.png', format='png')
     plt.show()
     torch.save(model.state_dict(), f'./models/{model.name}_{model_run_tag}.pkl')
     # evaluating model accuracy

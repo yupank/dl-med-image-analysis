@@ -12,10 +12,15 @@ class Cnn3LayerMulti(Cnn3Layer):
         self.name = f'2D_CNN_3L_multiclass_{init_nodes}_nodes'
         self.final = nn.LeakyReLU(negative_slope=0.1)
 
+class Cnn4LayerMulti(Cnn4LayerSiam):
+    def __init__(self, init_nodes=12, out_class=1, n_channel=3, conv_kernel=5, inp_dim=28 * 28, drop=0.1):
+        super(Cnn4LayerMulti, self).__init__(init_nodes, out_class, n_channel, conv_kernel, inp_dim, drop)
+        self.name = f'2D_CNN_4L_multiclass_{init_nodes}_nodes'
+        self.final = nn.LeakyReLU(negative_slope=0.1)
 
-in_dim = 256*256
+in_dim = 144*144
 
-model = Cnn3LayerMulti(init_nodes=20, out_class=4, n_channel=1, conv_kernel=5, inp_dim=in_dim, drop = 0.12).to(device)
+model = Cnn4LayerMulti(init_nodes=8, out_class=4, n_channel=1, conv_kernel=7, inp_dim=in_dim, drop = 0.15).to(device)
 # model = Cnn3Layer(init_nodes=16, n_channel=3, conv_kernel=5, inp_dim=in_dim, drop = 0.1).to(device)
 
 model_parameters = filter(lambda p: p.requires_grad, model.parameters())
@@ -32,7 +37,7 @@ tumor_train_loader, tumor_test_loader = kagg_brain_image_loader(train_bs=64)
 
 fin_acc, false_neg, execution_tm = cnn_image_classifier(
     model, tumor_train_loader, tumor_test_loader, 
-    model_run_tag='1a2', learn_rate=0.005, epochs=25, criterion=nn.CrossEntropyLoss(),
+    model_run_tag='6b1', learn_rate=0.005, epochs=80, criterion=nn.CrossEntropyLoss(),
     rep_folder='reports/kag_brain_tumors')
 
 print(f'final test accuracy: {fin_acc} false negatives: {false_neg}')

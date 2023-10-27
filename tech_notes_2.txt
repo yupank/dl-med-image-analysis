@@ -1,0 +1,125 @@
+classification of brain tumors from MRI dataset provided by Kaggle
+for multiclass classification, the activation function at the last level was changed to LeakyReLU
+(Tanh and ELU were also used but with similar results), the optimizer was chnaged to Adam
+
+3-layer CNN
+
+Initial testing: 
+with 16 initial nodes, 3L-Cnn reached final accuracy about 77% after 20 epochs,
+upscaling of the network did not improve testing accuracy but led to over-fitting;
+the execution time was rather long due to size of images (256x256).
+To reduce overfitting, augmentation of training dataset was used,
+to reduce the time, images were re-sampled to 144x144 which did not reduce the accuracy of classification.
+
+NOTES: 
+1) Down-sampling images did not not decrease the accuracy at all,
+2) increase in the number of nodes in the 3L CNN did not lead to significant improvement of accuracy
+
+3) for the similar execution time, 4L model provides better accuracy
+4) increase in the number of node of 4L networks increases accuracy slightly
+5) increas of convolution kernel size improved peformance
+
+Exerts from training log:
+1) model = Cnn3LayerMulti(init_nodes=20, out_class=4, n_channel=1, conv_kernel=5, inp_dim=in_dim, drop = 0.15)
+lr = 0.003, 20 epochs
+no data augmentation, model_run_tag='1a3'
+final test accuracy: 0.8352180936995154 false negatives: 0.009693053311793215
+execution time: 2172.5944361686707
+uneven convergence
+
+2) same as 1, but lr = 0.002 run_tag='1a2' (no data augmentation)
+final test accuracy: 0.7544426494345718 false negatives: 0.022617124394184167
+execution time: 2271.767889022827
+
+now with data augmentation
+3) same model as 1
+lr = 0.003, 20 epochs, run_tag='1b1'
+final test accuracy: 0.8045234248788369 false negatives: 0.008077544426494346
+execution time: 2515.4955677986145, smooth convergence
+4) model = Cnn3LayerMulti(init_nodes=32, out_class=4, n_channel=1, conv_kernel=5, inp_dim=in_dim, drop = 0.2).to(device)
+learn_rate=0.005, epochs=25,  run_tag='1b1'
+convergence "incomplete"
+final test accuracy: 0.7447495961227787 false negatives: 0.011308562197092083
+execution time: 4247.521254777908
+5) same as 4) but 40 epochs, run_tag = '2b1'
+final test accuracy: 0.7915993537964459 false negatives: 0.025848142164781908
+execution time: 7349.137325763702
+
+6) model = Cnn3LayerMulti(init_nodes=20, out_class=4, n_channel=1, conv_kernel=5, inp_dim=in_dim, drop = 0.15)
+learn_rate=0.004, epochs=50, run_tag = '1c1'
+final test accuracy: 0.8885298869143781 false negatives: 0.017770597738287562
+execution time: 6543.264544963837
+7) same as 6) but with 16 nodes, run_tag='1d1'
+final test accuracy: 0.8739903069466882 false negatives: 0.01938610662358643
+execution time: 3418.675389289856
+
+
+8) same as 4) but with drop-out rate halfed at 3rd layer, lr=0.005, epochs = 50
+final test accuracy: 0.840064620355412 false negatives: 0.012924071082390954
+execution time: 8917.444720029831
+
+
+9) model = Cnn3LayerMulti(init_nodes=16, out_class=4, n_channel=1, conv_kernel=5, inp_dim=in_dim, drop = 0.15)
+learn_rate=0.004, epochs=75, run_tag = 1d3
+1st run - final accuracy: 0.87560581583198
+2nd run :
+final test accuracy: 0.8352180936995154 false negatives: 0.01615508885298869
+execution time: 5714.91975402832, signs of overfitting
+
+with Adagrad optimizer
+10) model = Cnn3LayerMulti(init_nodes=16, out_class=4, n_channel=1, conv_kernel=5, inp_dim=in_dim, drop = 0.25)
+run_tag='3a1', learn_rate=0.01, epochs=40
+convergence incomplete
+final test accuracy: 0.7592891760904685 false negatives: 0.029079159935379646
+execution time: 2867.577308177948
+11) same as 10) but batch_size of 128 and drop = 0.2
+run_tag='3a2', learn_rate=0.02, epochs=75
+final test accuracy: 0.7318255250403877 false negatives: 0.05654281098546042
+execution time: 5063.53826284408
+convergence still incomplete
+
+12) model = Cnn3LayerMulti(init_nodes=8, out_class=4, n_channel=1, conv_kernel=5, inp_dim=in_dim, drop = 0.2)
+run_tag='4a1', learn_rate=0.01, epochs=100
+final test accuracy: 0.7673667205169629 false negatives: 0.01938610662358643
+execution time: 4029.103883743286
+
+ 4-L CNN, Adam optimizer,  bs=64
+13) model = Cnn4LayerMulti(init_nodes=8, out_class=4, n_channel=1, conv_kernel=5, inp_dim=in_dim, drop = 0.2)
+learn_rate=0.01, epochs=100
+final test accuracy: 0.8885298869143781 false negatives: 0.014539579967689823
+execution time: 3893.1231780052185
+
+14) model = Cnn4LayerMulti(init_nodes=16, out_class=4, n_channel=1, conv_kernel=5, inp_dim=in_dim, drop = 0.15)
+learn_rate=0.007, epochs=40
+
+final test accuracy: 0.8885298869143781 false negatives: 0.014539579967689823
+execution time: 2981.3991780281067
+
+15) same as 14, 70 epochs
+final test accuracy: 0.9079159935379645 false negatives: 0.009693053311793215
+execution time: 5321.049135684967
+
+16) model = Cnn4LayerMulti(init_nodes=16, out_class=4, n_channel=1, conv_kernel=5, inp_dim=in_dim, drop = 0.15)
+run_tag='5b1', learn_rate=0.006, epochs=75
+final test accuracy: 0.9176090468497576 false negatives: 0.008077544426494346
+execution time: 5231.141370773315
+
+17) same as 16) but kernel = 7
+final test accuracy: 0.9337641357027464 false negatives: 0.014539579967689823
+execution time: 6152.804714918137
+run_tag='5b2', learn_rate=0.005, epochs=80
+
+18) model = Cnn4LayerMulti(init_nodes=20, out_class=4, n_channel=1, conv_kernel=7, inp_dim=in_dim, drop = 0.15)
+run_tag='5c1', learn_rate=0.005, epochs=70
+final test accuracy: 0.9208400646203554 false negatives: 0.0032310177705977385
+execution time: 10912.666725158691
+
+19) model = Cnn4LayerMulti(init_nodes=12, out_class=4, n_channel=1, conv_kernel=7, inp_dim=in_dim, drop = 0.15)
+run_tag='6a1', learn_rate=0.006, epochs=60
+final test accuracy: 0.9079159935379645 false negatives: 0.008077544426494346
+execution time: 4911.2347140312195
+
+20) model = Cnn4LayerMulti(init_nodes=8, out_class=4, n_channel=1, conv_kernel=7, inp_dim=in_dim, drop = 0.15)
+run_tag='6b1', learn_rate=0.005, epochs=80
+final test accuracy: 0.8917609046849758 false negatives: 0.008077544426494346
+execution time: 3769.0493638515472

@@ -123,3 +123,18 @@ execution time: 4911.2347140312195
 run_tag='6b1', learn_rate=0.005, epochs=80
 final test accuracy: 0.8917609046849758 false negatives: 0.008077544426494346
 execution time: 3769.0493638515472
+
+21) model = Cnn4LayerMulti(init_nodes=12, out_class=4, n_channel=1, conv_kernel=9, inp_dim=in_dim, drop = 0.15)
+run_tag='7a1', learn_rate=0.003, epochs=100
+
+22) model = Cnn4LayerMulti(init_nodes=16, out_class=4, n_channel=1, conv_kernel=9, inp_dim=in_dim, drop = 0.1)
+run_tag='7a2', learn_rate=0.003, epochs=60
+final test accuracy: 0.9273021001615509 false negatives: 0.009693053311793215
+execution time: 5979.047477006912
+23) same as 22, lr = 0.002, epochs = 80 run_tag = '7a3'
+final test accuracy: 0.901453957996769 false negatives: 0.0210016155088853
+execution time: 8121.311414003372
+
+24) same as 21, but with drop = 0.2
+run_tag='6b3', learn_rate=0.005, epochs=80
+accuracy: 0.8820678513731826

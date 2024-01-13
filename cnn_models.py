@@ -64,11 +64,11 @@ class Cnn4LayerSiam(nn.Module):
     """ CNN similar to the above but with 4 convolutional units
         Model has a "siamese" structure with nodes numbers increasing from unit 1 to 2 and then decreasing towards unit 4
     """
-    def __init__(self, init_nodes=8, n_channel=3, conv_kernel= 5, inp_dim=28*28, drop= 0.1):
+    def __init__(self, init_nodes=8, out_class=1,  n_channel=3, conv_kernel= 5, inp_dim=28*28, drop= 0.1):
         super(Cnn4LayerSiam, self).__init__()
         self.name = f'2D_CNN_4L{init_nodes}_nodes'
         # to allow expansion to multi-class classifier
-        self.out_class = 1
+        self.out_class = out_class
         pad = int((conv_kernel-1)/2)
         self.conv_1 = nn.Sequential(
             nn.Conv2d(n_channel, init_nodes, kernel_size= conv_kernel, stride=1, padding=pad),
@@ -150,7 +150,7 @@ class Cnn3Layer3d(nn.Module):
             nn.Linear(int(init_nodes*2*out_dim), init_nodes*4),
             nn.ReLU(),
             nn.BatchNorm1d(init_nodes*4),
-            nn.Dropout(drop)
+            nn.Dropout(drop/2)
         )
 
         self.lin_unit_2 = nn.Linear(init_nodes*4,1)
